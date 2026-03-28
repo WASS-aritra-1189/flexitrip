@@ -11,6 +11,7 @@ import roomSlice from "./slice/roomSlice";
 import policySlice from "./slice/policySlice";
 import currencySlice from "./slice/currencySlice";
 import languageSlice from "./slice/languageSlice";
+import commissionSlice from "./slice/commissionSlice";
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     policy: policySlice,
     currency: currencySlice,
     language: languageSlice,
+    commission: commissionSlice,
   },
 });
 

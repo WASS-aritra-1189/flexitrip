@@ -30,6 +30,12 @@ import AccountVendor from "../pages/vendors/AccountVendor";
 import AccountVendorDetails from "../pages/vendors/AccountVendorDetails";
 import Currency from "../pages/currency-management/Currency";
 import Language from "../pages/language-management/Language";
+import Commission from "../pages/commission-management/Commission";
+import AllProperties from "../pages/all-properties/AllProperties";
+import PropertyDetails from "../pages/all-properties/PropertyDetails";
+import Blog from "../pages/blog-management/Blog";
+import BlogCreate from "../pages/blog-management/BlogCreate";
+import BlogDetails from "../pages/blog-management/BlogDetails";
 
 const routes = createBrowserRouter([
     {
@@ -72,6 +78,12 @@ const routes = createBrowserRouter([
             { path: "page-management", element: <PageManagement /> },
             { path: "currencies", element: <Currency /> },
             { path: "languages", element: <Language /> },
+            { path: "commissions", element: <Commission /> },
+            { path: "all-properties", element: <AllProperties /> },
+            { path: "all-properties/details", element: <PropertyDetails /> },
+            { path: "blogs", element: <Blog /> },
+            { path: "blogs/create", element: <BlogCreate /> },
+            { path: "blogs/details", element: <BlogDetails /> },
 
 
         ],

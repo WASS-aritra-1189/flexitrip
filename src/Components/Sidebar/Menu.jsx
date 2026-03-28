@@ -26,7 +26,8 @@ export const SIDEBAR_MENU = [
     name: "Property Management",
     icon: "bx bx-home",
     subItems: [
-      { name: "Propert Type", path: "/property-type" },
+      { name: "All Properties", path: "/all-properties" },
+      { name: "Property Type", path: "/property-type" },
       { name: "Property Amenity", path: "/property-amenity" },
     ]
   },
@@ -76,6 +77,19 @@ export const SIDEBAR_MENU = [
     name: "Language Management",
     icon: "bx bx-globe",
     path: "/languages"
+  },
+  {
+    name: "Commission Management",
+    icon: "bx bx-trending-up",
+    path: "/commissions"
+  },
+  {
+    name: "Blog Management",
+    icon: "bx bx-news",
+    subItems: [
+      { name: "All Blogs", path: "/blogs" },
+      { name: "Create Blog", path: "/blogs/create" },
+    ]
   },
   {
     name: "User Management",

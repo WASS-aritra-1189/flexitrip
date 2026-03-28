@@ -17,6 +17,7 @@ const propertyRuleURL = `${RootURL}property-rule-policy`;
 const ticketURL = `${RootURL}ticket`;
 const currencyURL = `${RootURL}currency`;
 const languageURL = `${RootURL}languages`;
+const commissionURL = `${RootURL}commission`;
 
 const login = (credentials) => {
   return axios.post(`${authUrl}/admin/login`, credentials);
@@ -359,6 +360,33 @@ const deleteLanguage = async (id) => {
   });
 };
 
+// commission
+const createCommission = async (payload) => {
+  return axios.post(`${commissionURL}`, payload, {
+    headers: await authHeader(),
+  });
+};
+
+const getAllCommission = async (payload) => {
+  const { limit, offset, keyword, status } = payload;
+  return axios.get(
+    `${commissionURL}/list?limit=${limit}&offset=${offset}&keyword=${keyword}&status=${status}`,
+    { headers: await authHeader() },
+  );
+};
+
+const updateCommission = async (id, payload) => {
+  return axios.patch(`${commissionURL}/update/${id}`, payload, {
+    headers: await authHeader(),
+  });
+};
+
+const deleteCommission = async (id) => {
+  return axios.delete(`${commissionURL}/remove/${id}`, {
+    headers: await authHeader(),
+  });
+};
+
 // {{web_url}}ticket/admin/list?limit=10&offset=0&keyword&status=RESOLVED
 const getTicket = async (payload) => {
   const { limit, offset, keyword, status } = payload;
@@ -451,4 +479,10 @@ export const services = {
   getAllLanguage,
   updateLanguage,
   deleteLanguage,
+
+  // commission
+  createCommission,
+  getAllCommission,
+  updateCommission,
+  deleteCommission,
 };
