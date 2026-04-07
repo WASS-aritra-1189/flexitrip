@@ -73,15 +73,41 @@ export function createRoomType(payload) {
 }
 
 export function updateRoomTypeData(payload) {
-  const { id, filters, body } = payload;
+  const { id, filters, body, iconFile } = payload;
   return async function updateRoomTypeThunk(dispatch) {
     dispatch(setUploading(true));
     try {
       await services.updateRoomType(id, body).then(
         (response) => {
           dispatch(setUploading(false));
-          dispatch(getRoomTypes(filters));
+          if (iconFile) {
+            const fd = new FormData();
+            fd.append('file', iconFile);
+            dispatch(uploadRoomTypeIcon({ id, formData: fd, filters }));
+          } else {
+            dispatch(getRoomTypes(filters));
+          }
           successHandler("Room Type updated successfully!");
+        },
+        (error) => {
+          dispatch(setUploading(false));
+          errorHandler(error.response);
+        },
+      );
+    } catch (err) {}
+  };
+}
+
+export function uploadRoomTypeIcon(payload) {
+  const { id, formData, filters } = payload;
+  return async function uploadRoomTypeIconThunk(dispatch) {
+    dispatch(setUploading(true));
+    try {
+      await services.updateRoomTypeIcon(id, formData).then(
+        () => {
+          dispatch(setUploading(false));
+          dispatch(getRoomTypes(filters));
+          successHandler("Room Type icon updated successfully!");
         },
         (error) => {
           dispatch(setUploading(false));

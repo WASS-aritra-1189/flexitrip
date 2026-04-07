@@ -55,8 +55,33 @@ export function createFaq(payload) {
       await services.createFaq(payload.body).then(
         (response) => {
           dispatch(setUploading(false));
-          dispatch(getFaqs(payload.filters));
+          if (payload.imageFile) {
+            const fd = new FormData();
+            fd.append('file', payload.imageFile);
+            dispatch(uploadFaqImage({ id: response.data.id, formData: fd, filters: payload.filters }));
+          } else {
+            dispatch(getFaqs(payload.filters));
+          }
           successHandler("FAQ created successfully!");
+        },
+        (error) => {
+          dispatch(setUploading(false));
+          errorHandler(error.response);
+        },
+      );
+    } catch (err) {}
+  };
+}
+
+export function uploadFaqImage(payload) {
+  return async function uploadFaqImageThunk(dispatch) {
+    dispatch(setUploading(true));
+    try {
+      await services.updateFaqImage(payload.id, payload.formData).then(
+        () => {
+          dispatch(setUploading(false));
+          dispatch(getFaqs(payload.filters));
+          successHandler("FAQ image uploaded successfully!");
         },
         (error) => {
           dispatch(setUploading(false));
@@ -72,9 +97,15 @@ export function updateFaqData(payload) {
     dispatch(setUploading(true));
     try {
       await services.updateFaq(payload.id, payload.body).then(
-        (response) => {
+        () => {
           dispatch(setUploading(false));
-          dispatch(getFaqs(payload.filters));
+          if (payload.imageFile) {
+            const fd = new FormData();
+            fd.append('file', payload.imageFile);
+            dispatch(uploadFaqImage({ id: payload.id, formData: fd, filters: payload.filters }));
+          } else {
+            dispatch(getFaqs(payload.filters));
+          }
           successHandler("FAQ updated successfully!");
         },
         (error) => {

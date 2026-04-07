@@ -54,25 +54,21 @@ const BlogDetails = () => {
 
             {/* Hero Banner */}
             <div style={{
-                height: '160px', background: 'linear-gradient(135deg, #062c15, #0a4a24)',
+                height: '160px',
+                background: blog.image ? `url(${blog.image}) center/cover` : 'linear-gradient(135deg, #062c15, #0a4a24)',
                 borderRadius: '10px', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', position: 'relative', marginBottom: '20px',
             }}>
-                <i className="bx bx-news" style={{ fontSize: '70px', color: 'rgba(255,255,255,0.12)' }}></i>
+                {!blog.image && <i className="bx bx-news" style={{ fontSize: '70px', color: 'rgba(255,255,255,0.12)' }}></i>}
                 <div style={{ position: 'absolute', bottom: '20px', left: '24px', right: '24px' }}>
                     <h2 style={{ margin: '0 0 8px', color: '#fff', fontSize: '20px', fontWeight: '700', lineHeight: 1.3 }}>{blog.title}</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <span style={{ padding: '3px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-                            {blog.category}
-                        </span>
-                        <span style={{
-                            padding: '3px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: '700',
-                            background: blog.status === 'PUBLISHED' ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)',
-                            color: blog.status === 'PUBLISHED' ? '#6ee7b7' : '#fcd34d',
-                        }}>
-                            {blog.status}
-                        </span>
-                    </div>
+                    <span style={{
+                        padding: '3px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: '700',
+                        background: blog.status === 'ACTIVE' ? 'rgba(34,197,94,0.2)' : blog.status === 'PENDING' ? 'rgba(59,130,246,0.2)' : blog.status === 'SUSPENDED' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
+                        color: blog.status === 'ACTIVE' ? '#6ee7b7' : blog.status === 'PENDING' ? '#93c5fd' : blog.status === 'SUSPENDED' ? '#fcd34d' : '#fca5a5',
+                    }}>
+                        {blog.status}
+                    </span>
                 </div>
             </div>
 
@@ -80,11 +76,9 @@ const BlogDetails = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                 {[
                     { label: 'Author', value: blog.author, icon: 'bx bx-user', color: '#2563eb' },
-                    { label: 'Category', value: blog.category, icon: 'bx bx-category', color: '#7c3aed' },
-                    { label: 'Total Views', value: blog.views.toLocaleString(), icon: 'bx bx-show', color: '#059669' },
-                    { label: 'Published On', value: blog.createdAt, icon: 'bx bx-calendar', color: '#d97706' },
-                    { label: 'Status', value: blog.status, icon: 'bx bx-check-circle', color: blog.status === 'PUBLISHED' ? '#16a34a' : '#d97706' },
-                    { label: 'Tags', value: blog.tags.length, icon: 'bx bx-purchase-tag', color: '#0891b2' },
+                    { label: 'Date', value: blog.date, icon: 'bx bx-calendar', color: '#d97706' },
+                    { label: 'Status', value: blog.status, icon: 'bx bx-check-circle', color: blog.status === 'ACTIVE' ? '#16a34a' : blog.status === 'PENDING' ? '#2563eb' : blog.status === 'SUSPENDED' ? '#d97706' : '#dc2626' },
+                    { label: 'Created At', value: new Date(blog.createdAt).toLocaleDateString(), icon: 'bx bx-time', color: '#059669' },
                 ].map((s, i) => (
                     <div key={i} style={{
                         background: '#fff', border: '1px solid #e5e7eb',
@@ -106,28 +100,23 @@ const BlogDetails = () => {
                 ))}
             </div>
 
-            {/* Tags */}
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '20px', marginBottom: '16px' }}>
-                <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <i className="bx bx-purchase-tag" style={{ color: '#0891b2' }}></i> Tags
-                </h4>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {blog.tags.map(tag => (
-                        <span key={tag} style={{
-                            padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
-                            background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb',
-                        }}>#{tag}</span>
-                    ))}
+            {/* Short Description */}
+            {blog.shortDesc && (
+                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '20px', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: '700', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <i className="bx bx-align-left" style={{ color: '#0891b2' }}></i> Short Description
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: '1.7' }}>{blog.shortDesc}</p>
                 </div>
-            </div>
+            )}
 
-            {/* Content */}
+            {/* Full Content */}
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '24px' }}>
                 <h4 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '700', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <i className="bx bx-file-blank" style={{ color: '#059669' }}></i> Blog Content
                 </h4>
                 <p style={{ margin: 0, fontSize: '14px', color: '#374151', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
-                    {blog.content}
+                    {blog.desc}
                 </p>
             </div>
         </>

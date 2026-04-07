@@ -34,6 +34,7 @@ import Commission from "../pages/commission-management/Commission";
 import AllProperties from "../pages/all-properties/AllProperties";
 import PropertyDetails from "../pages/all-properties/PropertyDetails";
 import Blog from "../pages/blog-management/Blog";
+import ContactUs from "../pages/contact-us/ContactUs";
 import BlogCreate from "../pages/blog-management/BlogCreate";
 import BlogDetails from "../pages/blog-management/BlogDetails";
 
@@ -84,8 +85,7 @@ const routes = createBrowserRouter([
             { path: "blogs", element: <Blog /> },
             { path: "blogs/create", element: <BlogCreate /> },
             { path: "blogs/details", element: <BlogDetails /> },
-
-
+            { path: "contact-us", element: <ContactUs /> },
         ],
     },
     {

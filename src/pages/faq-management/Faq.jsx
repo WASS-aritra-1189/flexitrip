@@ -1,11 +1,11 @@
-import { useDispatch } from 'react-redux';
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useState, useRef } from "react";
 import {
     getFaqs,
     createFaq,
     updateFaqData,
-    updateFaqStatus
+    updateFaqStatus,
+    uploadFaqImage
 } from '../../store/slice/faqSlice';
 import Modal from '../../Components/Modal/Modal';
 import Pagination from '../../Components/Pagination/Pagination';
@@ -25,6 +25,9 @@ const Faq = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [modal, setModal] = useState(false);
     const [formData, setFormData] = useState({ question: "", answer: "" });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const imageInputRef = useRef(null);
     const [edit, setEdit] = useState(false);
     const [faqId, setFaqId] = useState(null);
     const [title, setTitle] = useState("Create FAQ");
@@ -80,15 +83,24 @@ const Faq = () => {
         setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
     const handleCreateUpdate = () => {
         if (validateForm()) {
             if (edit) {
-                dispatch(updateFaqData({ id: faqId, filters, body: formData }));
+                dispatch(updateFaqData({ id: faqId, filters, body: formData, imageFile }));
             } else {
-                dispatch(createFaq({ body: formData, filters }));
+                dispatch(createFaq({ body: formData, filters, imageFile }));
             }
             setModal(false);
             setFormData({ question: "", answer: "" });
+            setImageFile(null);
+            setImagePreview(null);
             setErrors({});
         }
     };
@@ -98,6 +110,8 @@ const Faq = () => {
         setEdit(false);
         setTitle("Create FAQ");
         setFormData({ question: "", answer: "" });
+        setImageFile(null);
+        setImagePreview(null);
         setErrors({});
     };
 
@@ -107,9 +121,11 @@ const Faq = () => {
         setFaqId(id);
         setEdit(true);
         setTitle("Update FAQ");
+        setImageFile(null);
         const faqToEdit = faqs.find(item => item.id === id);
         if (faqToEdit) {
             setFormData({ question: faqToEdit.question, answer: faqToEdit.answer });
+            setImagePreview(faqToEdit.image || null);
         }
     };
 
@@ -206,6 +222,7 @@ const Faq = () => {
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Image</th>
                             <th>Question</th>
                             <th>Answer</th>
                             <th>Status</th>
@@ -218,6 +235,11 @@ const Faq = () => {
                         {faqs?.map((item, index) => (
                             <tr key={index}>
                                 <td>{paginationState.offset + index + 1}</td>
+                                <td>
+                                    {item.image
+                                        ? <img src={item.image} alt="faq" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px' }} />
+                                        : <span style={{ color: '#9ca3af', fontSize: '12px' }}>No image</span>}
+                                </td>
                                 <td>{item.question}</td>
                                 <td>{item.answer?.substring(0, 50)}{item.answer?.length > 50 ? '...' : ''}</td>
                                 <td>
@@ -281,6 +303,34 @@ const Faq = () => {
                             rows="5"
                         />
                         {errors.answer && <span className="err-msg">{errors.answer}</span>}
+                    </div>
+
+                    <div className="form-group">
+                        <label>Image {edit ? '(optional — replaces existing)' : '(optional)'}</label>
+                        <div
+                            onClick={() => imageInputRef.current.click()}
+                            style={{
+                                height: '100px', borderRadius: '8px', border: '2px dashed #d1d5db',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', overflow: 'hidden', background: '#f9fafb',
+                                backgroundImage: imagePreview ? `url(${imagePreview})` : 'none',
+                                backgroundSize: 'cover', backgroundPosition: 'center',
+                            }}
+                        >
+                            {!imagePreview && (
+                                <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+                                    <i className="bx bx-upload" style={{ fontSize: '24px', display: 'block' }}></i>
+                                    <span style={{ fontSize: '12px' }}>Click to upload image</span>
+                                </div>
+                            )}
+                        </div>
+                        <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+                        {imagePreview && (
+                            <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }}
+                                style={{ marginTop: '6px', padding: '4px 12px', borderRadius: '6px', border: '1px solid #fecaca', background: '#fff', color: '#dc2626', fontSize: '12px', cursor: 'pointer' }}>
+                                Remove Image
+                            </button>
+                        )}
                     </div>
 
                     <div className="button-group-modal">

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-
-const CATEGORIES = ["Travel", "Budget Travel", "Seasonal", "Tips & Tricks", "Luxury", "Adventure", "Food & Culture"];
+import { useDispatch } from "react-redux";
+import { createBlogAction, updateBlogAction, updateBlogImageAction } from "../../store/slice/blogSlice";
 
 const SectionCard = ({ icon, iconColor, title, children }) => (
     <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
@@ -36,28 +36,33 @@ const inputStyle = {
     fontFamily: 'inherit',
 };
 
+const defaultFilters = { limit: 10, offset: 0, status: 'PENDING', keyword: '' };
+
 const BlogCreate = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const dispatch = useDispatch();
     const existingBlog = location.state?.blog;
     const isEdit = !!existingBlog;
+    const imageInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
-        title: "", category: "Travel", author: "",
-        tags: "", status: "DRAFT", content: "",
+        title: "", author: "", desc: "", shortDesc: "", date: "",
     });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (existingBlog) {
             setFormData({
-                title: existingBlog.title,
-                category: existingBlog.category,
-                author: existingBlog.author,
-                tags: existingBlog.tags.join(", "),
-                status: existingBlog.status,
-                content: existingBlog.content,
+                title: existingBlog.title || "",
+                author: existingBlog.author || "",
+                desc: existingBlog.desc || "",
+                shortDesc: existingBlog.shortDesc || "",
+                date: existingBlog.date || "",
             });
+            if (existingBlog.imagePath) setImagePreview(existingBlog.imagePath);
         }
     }, []);
 
@@ -65,7 +70,9 @@ const BlogCreate = () => {
         const e = {};
         if (!formData.title.trim()) e.title = "* Title is required";
         if (!formData.author.trim()) e.author = "* Author is required";
-        if (!formData.content.trim()) e.content = "* Content is required";
+        if (!formData.desc.trim()) e.desc = "* Description is required";
+        if (!formData.shortDesc.trim()) e.shortDesc = "* Short description is required";
+        if (!formData.date) e.date = "* Date is required";
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -76,20 +83,32 @@ const BlogCreate = () => {
         setErrors(p => ({ ...p, [name]: "" }));
     };
 
-    const handleSubmit = (statusOverride) => {
-        if (validate()) {
-            const payload = statusOverride ? { ...formData, status: statusOverride } : formData;
-            console.log("Submit:", payload);
-            navigate('/blogs');
-        }
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
     };
 
-    const tagList = formData.tags ? formData.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
-    const wordCount = formData.content.trim() ? formData.content.trim().split(/\s+/).length : 0;
+    const handleSubmit = () => {
+        if (!validate()) return;
+        if (isEdit) {
+            dispatch(updateBlogAction({ id: existingBlog.id, body: formData, filters: defaultFilters }));
+            if (imageFile) {
+                const fd = new FormData();
+                fd.append('file', imageFile);
+                dispatch(updateBlogImageAction({ id: existingBlog.id, formData: fd, filters: defaultFilters }));
+            }
+        } else {
+            dispatch(createBlogAction({ body: formData, filters: defaultFilters }));
+        }
+        navigate('/blogs');
+    };
+
+    const wordCount = formData.desc.trim() ? formData.desc.trim().split(/\s+/).length : 0;
 
     return (
         <>
-            {/* Page Header */}
             <div className="logo-management-card">
                 <div className="card-header" style={{ justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -108,13 +127,11 @@ const BlogCreate = () => {
                 </div>
             </div>
 
-            {/* Two-column layout */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 290px', gap: '16px', alignItems: 'start' }}>
 
-                {/* ── LEFT COLUMN ── */}
+                {/* LEFT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-                    {/* Title */}
                     <SectionCard icon="bx bx-heading" iconColor="#062c15" title="Blog Title">
                         <Field label="Title" required error={errors.title}>
                             <input
@@ -125,92 +142,43 @@ const BlogCreate = () => {
                         </Field>
                     </SectionCard>
 
-                    {/* Content */}
-                    <SectionCard icon="bx bx-edit-alt" iconColor="#2563eb" title="Blog Content">
-                        <Field label="Content" required hint={`${wordCount} words`} error={errors.content}>
+                    <SectionCard icon="bx bx-align-left" iconColor="#0891b2" title="Short Description">
+                        <Field label="Short Description" required error={errors.shortDesc}>
                             <textarea
-                                name="content" value={formData.content} onChange={handleChange}
-                                placeholder="Write your blog content here. Share your travel experiences, tips, and insights..."
-                                rows={18}
-                                style={{
-                                    ...inputStyle, resize: 'vertical',
-                                    lineHeight: '1.75', fontSize: '14px',
-                                }}
+                                name="shortDesc" value={formData.shortDesc} onChange={handleChange}
+                                placeholder="Brief summary of the blog..."
+                                rows={3}
+                                style={{ ...inputStyle, resize: 'vertical' }}
                             />
                         </Field>
                     </SectionCard>
 
-                    {/* Tags */}
-                    <SectionCard icon="bx bx-purchase-tag" iconColor="#0891b2" title="Tags">
-                        <Field label="Tags" hint="Comma separated">
-                            <input
-                                name="tags" value={formData.tags} onChange={handleChange}
-                                placeholder="e.g. travel, nature, tips"
-                                style={inputStyle}
+                    <SectionCard icon="bx bx-edit-alt" iconColor="#2563eb" title="Blog Content">
+                        <Field label="Full Description" required hint={`${wordCount} words`} error={errors.desc}>
+                            <textarea
+                                name="desc" value={formData.desc} onChange={handleChange}
+                                placeholder="Write your full blog content here..."
+                                rows={16}
+                                style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.75', fontSize: '14px' }}
                             />
                         </Field>
-                        {tagList.length > 0 && (
-                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                                {tagList.map((tag, i) => (
-                                    <span key={i} style={{
-                                        padding: '4px 12px', borderRadius: '20px', fontSize: '11px',
-                                        fontWeight: '600', background: '#f0fdf4',
-                                        color: '#16a34a', border: '1px solid #bbf7d0',
-                                    }}>#{tag}</span>
-                                ))}
-                            </div>
-                        )}
                     </SectionCard>
                 </div>
 
-                {/* ── RIGHT COLUMN ── */}
+                {/* RIGHT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-                    {/* Publish */}
                     <SectionCard icon="bx bx-send" iconColor="#062c15" title="Publish">
-                        <div style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '10px 12px', background: '#f9fafb', borderRadius: '6px',
-                            border: '1px solid #e5e7eb', marginBottom: '12px',
-                        }}>
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#374151' }}>Current Status</span>
-                            <span style={{
-                                padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
-                                background: formData.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-                                color: formData.status === 'PUBLISHED' ? '#16a34a' : '#d97706',
-                            }}>{formData.status}</span>
-                        </div>
-
-                        <div style={{ marginBottom: '14px' }}>
-                            <label style={{ fontSize: '12px', fontWeight: '700', color: '#111827', display: 'block', marginBottom: '6px' }}>Set Status</label>
-                            <select name="status" value={formData.status} onChange={handleChange} style={{ ...inputStyle }}>
-                                <option value="DRAFT">DRAFT</option>
-                                <option value="PUBLISHED">PUBLISHED</option>
-                            </select>
-                        </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button onClick={() => handleSubmit()} style={{
+                            <button onClick={handleSubmit} style={{
                                 width: '100%', padding: '10px 0', borderRadius: '7px', border: 'none',
                                 background: '#062c15', color: '#fff', fontSize: '13px',
                                 fontWeight: '700', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                             }}>
                                 <i className="bx bx-check-circle" style={{ fontSize: '16px' }}></i>
-                                {isEdit ? "Update Blog" : formData.status === 'PUBLISHED' ? "Publish Now" : "Save Blog"}
+                                {isEdit ? "Update Blog" : "Save Blog"}
                             </button>
-
-                            {!isEdit && (
-                                <button onClick={() => handleSubmit('DRAFT')} style={{
-                                    width: '100%', padding: '10px 0', borderRadius: '7px',
-                                    border: '1px solid #d1d5db', background: '#f9fafb',
-                                    color: '#374151', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                }}>
-                                    <i className="bx bx-save" style={{ fontSize: '16px' }}></i> Save as Draft
-                                </button>
-                            )}
-
                             <button onClick={() => navigate('/blogs')} style={{
                                 width: '100%', padding: '10px 0', borderRadius: '7px',
                                 border: '1px solid #fecaca', background: '#fff',
@@ -222,8 +190,7 @@ const BlogCreate = () => {
                         </div>
                     </SectionCard>
 
-                    {/* Author & Category */}
-                    <SectionCard icon="bx bx-user" iconColor="#2563eb" title="Author & Category">
+                    <SectionCard icon="bx bx-user" iconColor="#2563eb" title="Author & Date">
                         <Field label="Author" required error={errors.author}>
                             <input
                                 name="author" value={formData.author} onChange={handleChange}
@@ -231,30 +198,51 @@ const BlogCreate = () => {
                                 style={inputStyle}
                             />
                         </Field>
-                        <Field label="Category" style={{ marginBottom: 0 }}>
-                            <select name="category" value={formData.category} onChange={handleChange} style={inputStyle}>
-                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
+                        <Field label="Date" required error={errors.date} style={{ marginBottom: 0 }}>
+                            <input
+                                type="date" name="date" value={formData.date} onChange={handleChange}
+                                style={inputStyle}
+                            />
                         </Field>
+                    </SectionCard>
+
+                    <SectionCard icon="bx bx-image" iconColor="#7c3aed" title="Blog Image">
+                        <div
+                            onClick={() => imageInputRef.current.click()}
+                            style={{
+                                height: '120px', borderRadius: '8px', border: '2px dashed #d1d5db',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', overflow: 'hidden', background: '#f9fafb',
+                                backgroundImage: imagePreview ? `url(${imagePreview})` : 'none',
+                                backgroundSize: 'cover', backgroundPosition: 'center',
+                            }}
+                        >
+                            {!imagePreview && (
+                                <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+                                    <i className="bx bx-upload" style={{ fontSize: '28px', display: 'block' }}></i>
+                                    <span style={{ fontSize: '12px' }}>Click to upload image</span>
+                                </div>
+                            )}
+                        </div>
+                        <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+                        {imagePreview && (
+                            <button onClick={() => { setImageFile(null); setImagePreview(null); }} style={{
+                                marginTop: '8px', width: '100%', padding: '6px', borderRadius: '6px',
+                                border: '1px solid #fecaca', background: '#fff', color: '#dc2626',
+                                fontSize: '12px', cursor: 'pointer',
+                            }}>Remove Image</button>
+                        )}
                     </SectionCard>
 
                     {/* Live Preview */}
                     <SectionCard icon="bx bx-show" iconColor="#7c3aed" title="Live Preview">
                         <div style={{
-                            height: '90px', background: 'linear-gradient(135deg, #062c15, #0a4a24)',
+                            height: '90px', background: imagePreview ? `url(${imagePreview}) center/cover` : 'linear-gradient(135deg, #062c15, #0a4a24)',
                             borderRadius: '8px', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', marginBottom: '12px', position: 'relative',
+                            justifyContent: 'center', marginBottom: '12px',
                         }}>
-                            <i className="bx bx-news" style={{ fontSize: '36px', color: 'rgba(255,255,255,0.25)' }}></i>
-                            {formData.category && (
-                                <span style={{
-                                    position: 'absolute', bottom: '8px', left: '10px',
-                                    padding: '2px 8px', borderRadius: '10px', fontSize: '10px',
-                                    fontWeight: '600', background: 'rgba(255,255,255,0.15)', color: '#fff',
-                                }}>{formData.category}</span>
-                            )}
+                            {!imagePreview && <i className="bx bx-news" style={{ fontSize: '36px', color: 'rgba(255,255,255,0.25)' }}></i>}
                         </div>
-
                         <p style={{
                             margin: '0 0 6px', fontSize: '13px', fontWeight: '700',
                             color: formData.title ? '#111827' : '#9ca3af',
@@ -262,40 +250,19 @@ const BlogCreate = () => {
                         }}>
                             {formData.title || 'No title yet...'}
                         </p>
-
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#6b7280', marginBottom: '8px' }}>
                             <i className="bx bx-user" style={{ fontSize: '12px' }}></i>
                             <span>{formData.author || 'Unknown Author'}</span>
-                            <span style={{ color: '#d1d5db' }}>•</span>
-                            <span style={{
-                                padding: '1px 7px', borderRadius: '10px', fontSize: '10px', fontWeight: '600',
-                                background: formData.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-                                color: formData.status === 'PUBLISHED' ? '#16a34a' : '#d97706',
-                            }}>{formData.status}</span>
+                            {formData.date && <><span style={{ color: '#d1d5db' }}>•</span><span>{formData.date}</span></>}
                         </div>
-
                         <p style={{
                             margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: 1.6,
                             display: '-webkit-box', WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                            fontStyle: formData.content ? 'normal' : 'italic',
+                            fontStyle: formData.shortDesc ? 'normal' : 'italic',
                         }}>
-                            {formData.content || 'No content yet...'}
+                            {formData.shortDesc || 'No short description yet...'}
                         </p>
-
-                        {tagList.length > 0 && (
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                {tagList.slice(0, 3).map((tag, i) => (
-                                    <span key={i} style={{
-                                        padding: '2px 8px', borderRadius: '10px', fontSize: '10px',
-                                        fontWeight: '600', background: '#f3f4f6', color: '#374151',
-                                    }}>#{tag}</span>
-                                ))}
-                                {tagList.length > 3 && (
-                                    <span style={{ fontSize: '10px', color: '#9ca3af', padding: '2px 4px' }}>+{tagList.length - 3} more</span>
-                                )}
-                            </div>
-                        )}
                     </SectionCard>
                 </div>
             </div>

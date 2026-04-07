@@ -100,5 +100,10 @@ export const SIDEBAR_MENU = [
     name: "Settings",
     icon: "bx bxs-cog",
     path: "/settings"
+  },
+  {
+    name: "Contact Us",
+    icon: "bx bx-envelope",
+    path: "/contact-us"
   }
 ];

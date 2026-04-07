@@ -1,6 +1,5 @@
-import { useDispatch } from 'react-redux';
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useState, useRef } from "react";
 import {
     getRoomTypes,
     createRoomType,
@@ -25,6 +24,9 @@ const RoomType = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [modal, setModal] = useState(false);
     const [formData, setFormData] = useState({ type: "" });
+    const [iconFile, setIconFile] = useState(null);
+    const [iconPreview, setIconPreview] = useState(null);
+    const iconInputRef = useRef(null);
     const [edit, setEdit] = useState(false);
     const [roomTypeId, setRoomTypeId] = useState(null);
     const [title, setTitle] = useState("Create Room Type");
@@ -74,15 +76,24 @@ const RoomType = () => {
         setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
     };
 
+    const handleIconChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIconFile(file);
+        setIconPreview(URL.createObjectURL(file));
+    };
+
     const handleCreateUpdate = () => {
         if (validateForm()) {
             if (edit) {
-                dispatch(updateRoomTypeData({ id: roomTypeId, filters, body: formData }));
+                dispatch(updateRoomTypeData({ id: roomTypeId, filters, body: formData, iconFile }));
             } else {
                 dispatch(createRoomType({ body: formData, filters }));
             }
             setModal(false);
             setFormData({ type: "" });
+            setIconFile(null);
+            setIconPreview(null);
             setErrors({});
         }
     };
@@ -92,6 +103,8 @@ const RoomType = () => {
         setEdit(false);
         setTitle("Create Room Type");
         setFormData({ type: "" });
+        setIconFile(null);
+        setIconPreview(null);
         setErrors({});
     };
 
@@ -101,9 +114,11 @@ const RoomType = () => {
         setRoomTypeId(id);
         setEdit(true);
         setTitle("Update Room Type");
+        setIconFile(null);
         const roomTypeToEdit = roomTypes.find(item => item.id === id);
         if (roomTypeToEdit) {
             setFormData({ type: roomTypeToEdit.type });
+            setIconPreview(roomTypeToEdit.icon || null);
         }
     };
 
@@ -182,6 +197,7 @@ const RoomType = () => {
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Icon</th>
                             <th>Room Type</th>
                             <th>Created At</th>
                             <th>Updated At</th>
@@ -192,6 +208,11 @@ const RoomType = () => {
                         {roomTypes?.map((item, index) => (
                             <tr key={index}>
                                 <td>{paginationState.offset + index + 1}</td>
+                                <td>
+                                    {item.icon
+                                        ? <img src={item.icon} alt="icon" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
+                                        : <span style={{ color: '#9ca3af', fontSize: '12px' }}>No icon</span>}
+                                </td>
                                 <td>{item.type}</td>
                                 <td>{new Date(item.createdAt).toLocaleString()}</td>
                                 <td>{new Date(item.updatedAt).toLocaleString()}</td>
@@ -238,6 +259,36 @@ const RoomType = () => {
                         />
                         {errors.type && <span className="err-msg">{errors.type}</span>}
                     </div>
+
+                    {edit && (
+                        <div className="form-group">
+                            <label>Icon (optional — replaces existing)</label>
+                            <div
+                                onClick={() => iconInputRef.current.click()}
+                                style={{
+                                    height: '100px', borderRadius: '8px', border: '2px dashed #d1d5db',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', overflow: 'hidden', background: '#f9fafb',
+                                    backgroundImage: iconPreview ? `url(${iconPreview})` : 'none',
+                                    backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+                                }}
+                            >
+                                {!iconPreview && (
+                                    <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+                                        <i className="bx bx-upload" style={{ fontSize: '24px', display: 'block' }}></i>
+                                        <span style={{ fontSize: '12px' }}>Click to upload icon</span>
+                                    </div>
+                                )}
+                            </div>
+                            <input ref={iconInputRef} type="file" accept="image/*" onChange={handleIconChange} style={{ display: 'none' }} />
+                            {iconPreview && (
+                                <button type="button" onClick={() => { setIconFile(null); setIconPreview(null); }}
+                                    style={{ marginTop: '6px', padding: '4px 12px', borderRadius: '6px', border: '1px solid #fecaca', background: '#fff', color: '#dc2626', fontSize: '12px', cursor: 'pointer' }}>
+                                    Remove Icon
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     <div className="button-group-modal">
                         <button className="confirm-button" onClick={handleCreateUpdate}>

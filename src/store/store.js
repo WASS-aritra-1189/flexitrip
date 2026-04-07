@@ -12,6 +12,7 @@ import policySlice from "./slice/policySlice";
 import currencySlice from "./slice/currencySlice";
 import languageSlice from "./slice/languageSlice";
 import commissionSlice from "./slice/commissionSlice";
+import blogSlice from "./slice/blogSlice";
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     currency: currencySlice,
     language: languageSlice,
     commission: commissionSlice,
+    blog: blogSlice,
   },
 });
 

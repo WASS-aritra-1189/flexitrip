@@ -18,6 +18,7 @@ const ticketURL = `${RootURL}ticket`;
 const currencyURL = `${RootURL}currency`;
 const languageURL = `${RootURL}languages`;
 const commissionURL = `${RootURL}commission`;
+const blogURL = `${RootURL}blogs`;
 
 const login = (credentials) => {
   return axios.post(`${authUrl}/admin/login`, credentials);
@@ -83,6 +84,12 @@ const updateFaq = async (id, payload) => {
 const changeFaqStatus = async (id, payload) => {
   return axios.put(`${faqURL}/status/${id}`, payload, {
     headers: await authHeader(),
+  });
+};
+
+const updateFaqImage = async (id, formData) => {
+  return axios.put(`${faqURL}/image/${id}`, formData, {
+    headers: { ...(await authHeader()), 'Content-Type': 'multipart/form-data' },
   });
 };
 
@@ -214,6 +221,12 @@ const getAllRoomType = async (payload) => {
 const updateRoomType = async (id, payload) => {
   return axios.patch(`${RoomUrl}-type/update/${id}`, payload, {
     headers: await authHeader(),
+  });
+};
+
+const updateRoomTypeIcon = async (id, formData) => {
+  return axios.put(`${RoomUrl}-type/icon/${id}`, formData, {
+    headers: { ...(await authHeader()), 'Content-Type': 'multipart/form-data' },
   });
 };
 const deleteRoomType = async (id) => {
@@ -387,6 +400,36 @@ const deleteCommission = async (id) => {
   });
 };
 
+// blog
+const getAllBlogs = async (payload) => {
+  const { limit, offset, keyword, status } = payload;
+  const params = new URLSearchParams({ limit, offset, keyword });
+  if (status) params.append('status', status);
+  return axios.get(`${blogURL}/all?${params.toString()}`, { headers: await authHeader() });
+};
+
+const getBlogById = async (id) => {
+  return axios.get(`${blogURL}/${id}`, { headers: await authHeader() });
+};
+
+const createBlog = async (payload) => {
+  return axios.post(`${blogURL}`, payload, { headers: await authHeader() });
+};
+
+const updateBlog = async (id, payload) => {
+  return axios.patch(`${blogURL}/${id}`, payload, { headers: await authHeader() });
+};
+
+const updateBlogImage = async (id, formData) => {
+  return axios.put(`${blogURL}/image/${id}`, formData, {
+    headers: { ...(await authHeader()), 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+const updateBlogStatus = async (id, payload) => {
+  return axios.put(`${blogURL}/status/${id}`, payload, { headers: await authHeader() });
+};
+
 // {{web_url}}ticket/admin/list?limit=10&offset=0&keyword&status=RESOLVED
 const getTicket = async (payload) => {
   const { limit, offset, keyword, status } = payload;
@@ -420,6 +463,7 @@ export const services = {
   createFaq,
   updateFaq,
   changeFaqStatus,
+  updateFaqImage,
 
   //state
   createState,
@@ -448,6 +492,7 @@ export const services = {
   createRoomType,
   getAllRoomType,
   updateRoomType,
+  updateRoomTypeIcon,
   deleteRoomType,
 
   // room Amenity
@@ -485,4 +530,12 @@ export const services = {
   getAllCommission,
   updateCommission,
   deleteCommission,
+
+  // blog
+  getAllBlogs,
+  getBlogById,
+  createBlog,
+  updateBlog,
+  updateBlogImage,
+  updateBlogStatus,
 };
